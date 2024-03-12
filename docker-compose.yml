@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  engine_invoice:
+    container_name: engine_invoice
+    image: engine_invoice:0.0.1
+    build: .
+    restart: always

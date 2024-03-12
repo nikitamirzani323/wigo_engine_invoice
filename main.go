@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
-	"github.com/nikitamirzani323/wigo_engine_invoice/configs"
 	"github.com/nikitamirzani323/wigo_engine_invoice/db"
 	"github.com/nikitamirzani323/wigo_engine_invoice/helpers"
 	"github.com/nikitamirzani323/wigo_engine_invoice/models"
@@ -40,8 +39,8 @@ func main() {
 		DB:       dbName,
 	})
 
-	// resultredis := rdb.Subscribe("", "payload_agen_nuke")
-	resultredis := rdb.Subscribe("", "payload_nuke")
+	// resultredis := rdb.Subscribe("", "payload_nuke")
+	resultredis := rdb.Subscribe("", "payload_enginesave_nuke")
 
 	for {
 		msg, err := resultredis.ReceiveMessage()
@@ -50,12 +49,24 @@ func main() {
 		}
 
 		// fmt.Println("Received message from " + msg.Payload + " channel.")
-		// data_pubsub := strings.Split(msg.Payload, ":")
-
+		// data_send = invoice + "|" + prize_2D + "|" + idcompany
+		//invoce|result|company
 		msg_sse := msg.Payload
 
 		msg_replace := strings.Replace(msg_sse, `"`, "", -1)
+		msg_split := strings.Split(msg_replace, "|")
+
+		invoice := msg_split[0]
+		result := msg_split[1]
+		company := msg_split[2]
+		// fmt.Printf("%s-%s-%s\n", invoice, result, company)
 		fmt.Printf("%s\n", msg_replace)
+
+		if company != "" && invoice != "" {
+			if result != "" {
+				Update_transaksi(company, invoice, result)
+			}
+		}
 
 		// time.Sleep(1 * time.Second)
 
@@ -75,11 +86,12 @@ func main() {
 	rdb.Close()
 	fmt.Println("Fiber was successful shutdown.")
 }
-func Update_transaksi(idcompany, invoice, result string) bool {
+func Update_transaksi(idcompany, invoice, result string) {
+	msg := "Failed"
 	tglnow, _ := goment.New()
 	// id_invoice := _GetInvoice(idcompany)
 	// prize_2D := helpers.GenerateNumber(2)
-	flag_compile := false
+	// flag_compile := false
 
 	_, tbl_trx_transaksi, tbl_trx_transaksidetail, _ := models.Get_mappingdatabase(idcompany)
 
@@ -153,10 +165,9 @@ func Update_transaksi(idcompany, invoice, result string) bool {
 			fmt.Println(msg_update_parent)
 
 		} else {
-			flag_compile = true
+			// flag_compile = true
+			msg = "Success - Update Paret - " + invoice
 		}
-	} else {
-		flag_compile = true
 	}
 
 	key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
@@ -183,85 +194,10 @@ func Update_transaksi(idcompany, invoice, result string) bool {
 	fmt.Printf("Redis Delete DETAIL LOSE : %d\n", val_detail_lose)
 	fmt.Printf("Redis Delete DETAIL RUNNIN : %d\n", val_detail_running)
 	fmt.Println("")
-	return flag_compile
+	// return flag_compile
+	fmt.Println(msg)
 }
-func _GetConf(idcompany string) (int, string, string) {
-	con := db.CreateCon()
-	ctx := context.Background()
 
-	time := 0
-	maintenance := "N"
-	operator := "N"
-
-	sql_select := ""
-	sql_select += "SELECT "
-	sql_select += "conf_2digit_30_time, conf_2digit_30_maintenance, conf_2digit_30_operator "
-	sql_select += "FROM " + configs.DB_tbl_mst_company_config + " "
-	sql_select += "WHERE idcompany='" + idcompany + "' "
-	row := con.QueryRowContext(ctx, sql_select)
-	switch e := row.Scan(&time, &maintenance, &operator); e {
-	case sql.ErrNoRows:
-	case nil:
-	default:
-		helpers.ErrorCheck(e)
-	}
-	if maintenance == "Y" {
-		maintenance = "OFFLINE"
-	} else {
-		maintenance = "ONLINE"
-	}
-	return time, maintenance, operator
-}
-func _GetInvoice(idcompany string) string {
-	con := db.CreateCon()
-	ctx := context.Background()
-
-	_, tbl_trx_transaksi, _, _ := models.Get_mappingdatabase(idcompany)
-
-	idtransaksi := ""
-
-	sql_select := ""
-	sql_select += "SELECT "
-	sql_select += "idtransaksi "
-	sql_select += "FROM " + tbl_trx_transaksi + " "
-	sql_select += "WHERE resultwigo='' "
-	sql_select += "AND status_transaksi='OPEN' "
-	sql_select += "ORDER BY idtransaksi DESC LIMIT 1"
-
-	row := con.QueryRowContext(ctx, sql_select)
-	switch e := row.Scan(&idtransaksi); e {
-	case sql.ErrNoRows:
-	case nil:
-	default:
-		helpers.ErrorCheck(e)
-	}
-
-	return idtransaksi
-}
-func _GetInvoiceInfo(idcompany, idinvoice string) string {
-	con := db.CreateCon()
-	ctx := context.Background()
-
-	_, tbl_trx_transaksi, _, _ := models.Get_mappingdatabase(idcompany)
-
-	result := ""
-
-	sql_select := ""
-	sql_select += "SELECT "
-	sql_select += "resultwigo "
-	sql_select += "FROM " + tbl_trx_transaksi + " "
-	sql_select += "WHERE idtransaksi='" + idinvoice + "' "
-	sql_select += "AND resultwigo !='' "
-
-	row := con.QueryRowContext(ctx, sql_select)
-	switch e := row.Scan(&result); e {
-	case sql.ErrNoRows:
-	case nil:
-	default:
-		helpers.ErrorCheck(e)
-	}
-	return result
-}
 func _GetTotalBetWin_Transaksi(table, idtransaksi string) (int, int) {
 	con := db.CreateCon()
 	ctx := context.Background()
