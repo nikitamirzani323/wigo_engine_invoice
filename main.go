@@ -243,118 +243,68 @@ func _GetTotalMember_Transaksi(table, idtransaksi string) int {
 func _rumuswigo(tipebet, nomorclient, nomorkeluaran string) string {
 	result := "LOSE"
 
+	result_redblack, result_gangen, result_besarkecil, result_line := _nomorresult(nomorkeluaran)
 	switch tipebet {
 	case "ANGKA":
 		if nomorclient == nomorkeluaran {
 			result = "WIN"
 		}
 	case "REDBLACK":
-		keluaran_ganjilgenap := _genapganjil(nomorkeluaran)
-		keluaran_besarkecil := _besarkecil(nomorkeluaran)
 
-		if nomorclient == keluaran_ganjilgenap {
+		if nomorclient == result_redblack {
 			result = "WIN"
 		}
-		if nomorclient == keluaran_besarkecil {
+		if nomorclient == result_gangen {
+			result = "WIN"
+		}
+		if nomorclient == result_besarkecil {
 			result = "WIN"
 		}
 	case "LINE":
-		keluaran_line := _line(nomorkeluaran)
-		if nomorclient == keluaran_line {
+		if nomorclient == result_line {
 			result = "WIN"
 		}
 	}
 
 	return result
 }
-func _genapganjil(nomorkeluaran string) string {
-	nomor_generator := ""
-	result := ""
-	for i := 0; i <= 99; i++ {
-		if i < 10 {
-			nomor_generator = "0" + strconv.Itoa(i)
-		} else {
-			nomor_generator = strconv.Itoa(i)
-		}
-		if i%2 == 0 {
-			if nomorkeluaran == nomor_generator {
-				result = "GENAP"
-				break
-			}
 
-		} else {
-			if nomorkeluaran == nomor_generator {
-				result = "GANJIL"
-				break
-			}
+func _nomorresult(nomoresult string) (string, string, string, string) {
+	type nomor_result_data struct {
+		nomor_id         string
+		nomor_flag       bool
+		nomor_css        string
+		nomor_gangen     string
+		nomor_besarkecil string
+		nomor_line       string
+		nomor_redblack   string
+	}
+
+	var cards = []nomor_result_data{
+		{nomor_id: "00", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE1", nomor_redblack: "BLACK"},
+		{nomor_id: "01", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE1", nomor_redblack: "RED"},
+		{nomor_id: "02", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE2", nomor_redblack: "BLACK"},
+		{nomor_id: "03", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE2", nomor_redblack: "RED"},
+		{nomor_id: "04", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE3", nomor_redblack: "BLACK"},
+		{nomor_id: "05", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE3", nomor_redblack: "RED"},
+		{nomor_id: "06", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE1", nomor_redblack: "BLACK"},
+		{nomor_id: "07", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE1", nomor_redblack: "RED"},
+		{nomor_id: "08", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE2", nomor_redblack: "BLACK"},
+		{nomor_id: "09", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE2", nomor_redblack: "RED"},
+		{nomor_id: "10", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE3", nomor_redblack: "BLACK"},
+		{nomor_id: "11", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "KECIL", nomor_line: "LINE3", nomor_redblack: "RED"}}
+
+	result_redblack := ""
+	result_gangen := ""
+	result_besarkecil := ""
+	result_line := ""
+	for i := 0; i < len(cards); i++ {
+		if cards[i].nomor_id == nomoresult {
+			result_redblack = cards[i].nomor_redblack
+			result_gangen = cards[i].nomor_gangen
+			result_besarkecil = cards[i].nomor_besarkecil
+			result_line = cards[i].nomor_line
 		}
 	}
-	return result
-}
-func _besarkecil(nomorkeluaran string) string {
-	nomor_generator := ""
-	result := ""
-	for i := 0; i <= 99; i++ {
-		if i < 10 {
-			nomor_generator = "0" + strconv.Itoa(i)
-		} else {
-			nomor_generator = strconv.Itoa(i)
-		}
-		if i < 50 {
-			if nomorkeluaran == nomor_generator {
-				result = "KECIL"
-				break
-			}
-
-		} else {
-			if nomorkeluaran == nomor_generator {
-				result = "BESAR"
-				break
-			}
-		}
-	}
-	return result
-}
-func _line(nomorkeluaran string) string {
-	nomor_generator := ""
-	result := ""
-	for i := 0; i <= 99; i++ {
-		if i < 10 {
-			nomor_generator = "0" + strconv.Itoa(i)
-		} else {
-			nomor_generator = strconv.Itoa(i)
-		}
-		if i < 19 {
-			if nomorkeluaran == nomor_generator {
-				result = "LINE1"
-				break
-			}
-
-		}
-		if i > 19 && i < 40 {
-			if nomorkeluaran == nomor_generator {
-				result = "LINE2"
-				break
-			}
-		}
-		if i > 39 && i < 60 {
-			if nomorkeluaran == nomor_generator {
-				result = "LINE3"
-				break
-			}
-		}
-		if i > 59 && i < 80 {
-			if nomorkeluaran == nomor_generator {
-				result = "LINE4"
-				break
-			}
-		}
-		if i > 80 && i < 100 {
-			if nomorkeluaran == nomor_generator {
-				result = "LINE5"
-				break
-			}
-		}
-	}
-	return result
+	return result_redblack, result_gangen, result_besarkecil, result_line
 }
