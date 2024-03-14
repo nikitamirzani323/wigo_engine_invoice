@@ -210,8 +210,8 @@ func Exec_SQL(sql, table, action string, args ...interface{}) (bool, string) {
 }
 func Get_mappingdatabase(codeagen string) (string, string, string, string) {
 	tbl_mst_config := `"db_wigo_` + strings.ToLower(codeagen) + `".tbl_mst_config`
-	tbl_trx_transaksi := `"db_wigo_` + strings.ToLower(codeagen) + `".tbl_trx_transaksi`
-	tbl_trx_transaksidetail := `"db_wigo_` + strings.ToLower(codeagen) + `".tbl_trx_transaksidetail`
+	tbl_trx_transaksi := `"db_wigo_` + strings.ToLower(codeagen) + `".tbl_trx_transaksi_12digit`
+	tbl_trx_transaksidetail := `"db_wigo_` + strings.ToLower(codeagen) + `".tbl_trx_transaksidetail_12digit`
 	view_invoice_client := `"db_wigo_` + strings.ToLower(codeagen) + `".view_invoice_client`
 
 	return tbl_mst_config, tbl_trx_transaksi, tbl_trx_transaksidetail, view_invoice_client

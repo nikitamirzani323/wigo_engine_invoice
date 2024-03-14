@@ -1,8 +1,8 @@
 version: '2'
 
 services:
-  engine_invoice:
-    container_name: engine_invoice
-    image: engine_invoice:0.0.1
+  engine_invoice_12d:
+    container_name: engine_invoice_12d
+    image: engine_invoice_12d:0.0.1
     build: .
     restart: always
