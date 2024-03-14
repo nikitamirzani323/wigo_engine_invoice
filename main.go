@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/buger/jsonparser"
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
 	"github.com/nikitamirzani323/wigo_engine_invoice/db"
@@ -92,71 +93,134 @@ func Update_transaksi(idcompany, invoice, result string) {
 	// id_invoice := _GetInvoice(idcompany)
 	// prize_2D := helpers.GenerateNumber(2)
 	// flag_compile := false
-
-	_, tbl_trx_transaksi, tbl_trx_transaksidetail, _ := models.Get_mappingdatabase(idcompany)
-
-	con := db.CreateCon()
-	ctx := context.Background()
 	flag_detail := false
-	sql_select_detail := `SELECT 
+	keyredis := strings.ToLower(idcompany) + "_game_12d_" + invoice
+	resultRD_invoice, flag_invoice := helpers.GetRedis(keyredis)
+	_, tbl_trx_transaksi, tbl_trx_transaksidetail, _ := models.Get_mappingdatabase(idcompany)
+	if !flag_invoice {
+		fmt.Println("READ INVOICE DATABASE")
+
+		con := db.CreateCon()
+		ctx := context.Background()
+
+		sql_select_detail := `SELECT 
 					idtransaksidetail , nomor, tipebet,bet, multiplier, username_client 
 					FROM ` + tbl_trx_transaksidetail + `  
 					WHERE status_transaksidetail='RUNNING'  
 					AND idtransaksi='` + invoice + `'  `
 
-	row, err := con.QueryContext(ctx, sql_select_detail)
-	helpers.ErrorCheck(err)
-	for row.Next() {
-		var (
-			bet_db                                                         int
-			multiplier_db                                                  float64
-			idtransaksidetail_db, nomor_db, tipebet_db, username_client_db string
-		)
-
-		err = row.Scan(&idtransaksidetail_db, &nomor_db, &tipebet_db, &bet_db, &multiplier_db, &username_client_db)
+		row, err := con.QueryContext(ctx, sql_select_detail)
 		helpers.ErrorCheck(err)
+		for row.Next() {
+			var (
+				bet_db                                                         int
+				multiplier_db                                                  float64
+				idtransaksidetail_db, nomor_db, tipebet_db, username_client_db string
+			)
 
-		status_client := _rumuswigo(tipebet_db, nomor_db, result)
-		win := 0
-		if status_client == "WIN" {
-			win = bet_db + int(float64(bet_db)*multiplier_db)
-		}
+			err = row.Scan(&idtransaksidetail_db, &nomor_db, &tipebet_db, &bet_db, &multiplier_db, &username_client_db)
+			helpers.ErrorCheck(err)
 
-		// UPDATE STATUS DETAIL
-		sql_update_detail := `
+			status_client := _rumuswigo(tipebet_db, nomor_db, result)
+			win := 0
+			if status_client == "WIN" {
+				win = bet_db + int(float64(bet_db)*multiplier_db)
+			}
+
+			// UPDATE STATUS DETAIL
+			sql_update_detail := `
 					UPDATE 
 					` + tbl_trx_transaksidetail + `  
 					SET status_transaksidetail=$1, win=$2, 
 					update_transaksidetail=$3, updatedate_transaksidetail=$4           
 					WHERE idtransaksidetail=$5          
 				`
-		flag_update_detail, msg_update_detail := models.Exec_SQL(sql_update_detail, tbl_trx_transaksidetail, "UPDATE",
-			status_client, win,
-			"SYSTEM", tglnow.Format("YYYY-MM-DD HH:mm:ss"), idtransaksidetail_db)
+			flag_update_detail, msg_update_detail := models.Exec_SQL(sql_update_detail, tbl_trx_transaksidetail, "UPDATE",
+				status_client, win,
+				"SYSTEM", tglnow.Format("YYYY-MM-DD HH:mm:ss"), idtransaksidetail_db)
 
-		if !flag_update_detail {
-			fmt.Println(msg_update_detail)
+			if !flag_update_detail {
+				fmt.Println(msg_update_detail)
+			}
+			flag_detail = true
+
+			key_redis_invoice_client := invoice_client_redis + "_" + strings.ToLower(idcompany) + "_" + strings.ToLower(username_client_db)
+			val_invoice_client := helpers.DeleteRedis(key_redis_invoice_client)
+			fmt.Println("")
+			fmt.Printf("Redis Delete INVOICE : %d - %s \r", val_invoice_client, key_redis_invoice_client)
+			fmt.Println("")
 		}
-		flag_detail = true
+		defer row.Close()
 
-		key_redis_invoice_client := invoice_client_redis + "_" + strings.ToLower(idcompany) + "_" + strings.ToLower(username_client_db)
-		val_invoice_client := helpers.DeleteRedis(key_redis_invoice_client)
+	} else {
+		fmt.Println("READ INVOICE REDIS")
+
+		jsonredis := []byte(resultRD_invoice)
+		recordlistbet_RD, _, _, _ := jsonparser.Get(jsonredis, "listbet")
+
+		jsonparser.ArrayEach(recordlistbet_RD, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			client_id, _ := jsonparser.GetString(value, "client_id")
+			client_username, _ := jsonparser.GetString(value, "client_username")
+			client_tipebet, _ := jsonparser.GetString(value, "client_tipebet")
+			client_nomor, _ := jsonparser.GetString(value, "client_nomor")
+			client_bet, _ := jsonparser.GetInt(value, "client_bet")
+			client_multiplier, _ := jsonparser.GetFloat(value, "client_multiplier")
+
+			status_client := _rumuswigo(client_tipebet, client_nomor, result)
+			win := 0
+			if status_client == "WIN" {
+				win = int(client_bet) + int(float64(client_bet)*client_multiplier)
+			}
+
+			// UPDATE STATUS DETAIL
+			sql_update_detail := `
+					UPDATE 
+					` + tbl_trx_transaksidetail + `  
+					SET status_transaksidetail=$1, win=$2, 
+					update_transaksidetail=$3, updatedate_transaksidetail=$4           
+					WHERE idtransaksidetail=$5          
+				`
+			flag_update_detail, msg_update_detail := models.Exec_SQL(sql_update_detail, tbl_trx_transaksidetail, "UPDATE",
+				status_client, win,
+				"SYSTEM", tglnow.Format("YYYY-MM-DD HH:mm:ss"), client_id)
+
+			if !flag_update_detail {
+				fmt.Println(msg_update_detail)
+			}
+			flag_detail = true
+
+			key_redis_invoice_client := invoice_client_redis + "_" + strings.ToLower(idcompany) + "_" + strings.ToLower(client_username)
+			val_invoice_client := helpers.DeleteRedis(key_redis_invoice_client)
+			fmt.Println("")
+			fmt.Printf("Redis Delete INVOICE : %d - %s \r", val_invoice_client, key_redis_invoice_client)
+			fmt.Println("")
+
+		})
+
+		key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
+		val_result := helpers.DeleteRedis(key_redis_result)
 		fmt.Println("")
-		fmt.Printf("Redis Delete INVOICE : %d - %s \r", val_invoice_client, key_redis_invoice_client)
+		fmt.Printf("Redis Delete RESULT : %d - %s \n", val_result, key_redis_result)
 		fmt.Println("")
+		for i := 0; i <= 1000; i = i + 250 {
+			//LISTINVOICE_2D30S_AGEN_nuke_0_
+			key_redis_ageninvoice := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_" + strconv.Itoa(i) + "_"
+			val_result := helpers.DeleteRedis(key_redis_ageninvoice)
+			fmt.Printf("Redis Delete AGEN INVOICE : %d - %s \n", val_result, key_redis_ageninvoice)
+		}
+
 	}
-	defer row.Close()
 	if flag_detail {
 		// UPDATE PARENT
 		total_member := _GetTotalMember_Transaksi(tbl_trx_transaksidetail, invoice)
 		total_bet, total_win := _GetTotalBetWin_Transaksi(tbl_trx_transaksidetail, invoice)
 		sql_update_parent := `
-					UPDATE 
-					` + tbl_trx_transaksi + `  
-					SET total_bet=$1, total_win=$2, total_member=$3,
-					update_transaksi=$4, updatedate_transaksi=$5            
-					WHERE idtransaksi=$6        
-				`
+				UPDATE 
+				` + tbl_trx_transaksi + `  
+				SET total_bet=$1, total_win=$2, total_member=$3,
+				update_transaksi=$4, updatedate_transaksi=$5            
+				WHERE idtransaksi=$6        
+			`
 		flag_update_parent, msg_update_parent := models.Exec_SQL(sql_update_parent, tbl_trx_transaksi, "UPDATE",
 			total_bet, total_win, total_member,
 			"SYSTEM", tglnow.Format("YYYY-MM-DD HH:mm:ss"), invoice)
@@ -169,19 +233,6 @@ func Update_transaksi(idcompany, invoice, result string) {
 			msg = "Success - Update Paret - " + invoice
 		}
 	}
-
-	key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
-	val_result := helpers.DeleteRedis(key_redis_result)
-	fmt.Println("")
-	fmt.Printf("Redis Delete RESULT : %d - %s \n", val_result, key_redis_result)
-	fmt.Println("")
-	for i := 0; i <= 1000; i = i + 250 {
-		//LISTINVOICE_2D30S_AGEN_nuke_0_
-		key_redis_ageninvoice := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_" + strconv.Itoa(i) + "_"
-		val_result := helpers.DeleteRedis(key_redis_ageninvoice)
-		fmt.Printf("Redis Delete AGEN INVOICE : %d - %s \n", val_result, key_redis_ageninvoice)
-	}
-
 	// key_redis_detail := "LISTINVOICE_2D30S_AGEN_nuke_DETAIL_240312231346_WIN"
 	key_redis_detail_win := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_WIN"
 	key_redis_detail_lose := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_LOSE"
