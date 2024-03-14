@@ -197,18 +197,6 @@ func Update_transaksi(idcompany, invoice, result string) {
 
 		})
 
-		key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
-		val_result := helpers.DeleteRedis(key_redis_result)
-		fmt.Println("")
-		fmt.Printf("Redis Delete RESULT : %d - %s \n", val_result, key_redis_result)
-		fmt.Println("")
-		for i := 0; i <= 1000; i = i + 250 {
-			//LISTINVOICE_2D30S_AGEN_nuke_0_
-			key_redis_ageninvoice := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_" + strconv.Itoa(i) + "_"
-			val_result := helpers.DeleteRedis(key_redis_ageninvoice)
-			fmt.Printf("Redis Delete AGEN INVOICE : %d - %s \n", val_result, key_redis_ageninvoice)
-		}
-
 	}
 	if flag_detail {
 		// UPDATE PARENT
@@ -233,6 +221,19 @@ func Update_transaksi(idcompany, invoice, result string) {
 			msg = "Success - Update Paret - " + invoice
 		}
 	}
+
+	key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
+	val_result := helpers.DeleteRedis(key_redis_result)
+	fmt.Println("")
+	fmt.Printf("Redis Delete RESULT : %d - %s \n", val_result, key_redis_result)
+	fmt.Println("")
+	for i := 0; i <= 1000; i = i + 250 {
+		//LISTINVOICE_2D30S_AGEN_nuke_0_
+		key_redis_ageninvoice := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_" + strconv.Itoa(i) + "_"
+		val_result := helpers.DeleteRedis(key_redis_ageninvoice)
+		fmt.Printf("Redis Delete AGEN INVOICE : %d - %s \n", val_result, key_redis_ageninvoice)
+	}
+
 	// key_redis_detail := "LISTINVOICE_2D30S_AGEN_nuke_DETAIL_240312231346_WIN"
 	key_redis_detail_win := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_WIN"
 	key_redis_detail_lose := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_LOSE"
