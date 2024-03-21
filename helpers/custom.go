@@ -8,29 +8,29 @@ import (
 func GetEndRangeDate(month string) string {
 	end := ""
 	switch month {
-	case "JAN":
+	case "01":
 		end = "31"
-	case "FEB":
+	case "02":
 		end = "28"
-	case "MAR":
+	case "03":
 		end = "31"
-	case "APR":
+	case "04":
 		end = "30"
-	case "MAY":
+	case "05":
 		end = "31"
-	case "JUN":
+	case "06":
 		end = "30"
-	case "JUL":
+	case "07":
 		end = "31"
-	case "AUG":
+	case "08":
 		end = "31"
-	case "SEP":
+	case "09":
 		end = "30"
-	case "OCT":
+	case "10":
 		end = "31"
-	case "NOV":
+	case "11":
 		end = "30"
-	case "DEC":
+	case "12":
 		end = "31"
 	}
 	return end

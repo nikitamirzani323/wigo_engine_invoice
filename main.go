@@ -220,6 +220,42 @@ func Update_transaksi(idcompany, invoice, result string) {
 			// flag_compile = true
 			msg = "Success - Update Paret - " + invoice
 		}
+
+		type Invoicemonth struct {
+			Totalbet int `json:"totalbet"`
+			Totalwin int `json:"totalwin"`
+		}
+		var objinvoicemonth Invoicemonth
+
+		dayendmonth := helpers.GetEndRangeDate(tglnow.Format("MM"))
+		tglstart := tglnow.Format("YYYY-MM-") + "01 00:00:00"
+		tglend := tglnow.Format("YYYY-MM-") + dayendmonth + " 23:59:59"
+		tglstart_redis := tglnow.Format("YYYYMM") + "01000000"
+		tglend_redis := tglnow.Format("YYYYMM") + dayendmonth + "235959"
+
+		keyredis_invoicemonth := strings.ToLower(idcompany) + "_game_12d_" + tglstart_redis + tglend_redis
+		resultRD_invoicemonth, flag_invoicemonth := helpers.GetRedis(keyredis_invoicemonth)
+		if !flag_invoicemonth {
+			fmt.Println("INVOICE MONTH DATABASE")
+			totalbet_DB, totalwin_DB := _GetTotalBet_ByDate(tbl_trx_transaksi, tglstart, tglend)
+
+			objinvoicemonth.Totalbet = totalbet_DB
+			objinvoicemonth.Totalwin = totalwin_DB
+
+			helpers.SetRedis(keyredis_invoicemonth, objinvoicemonth, 0)
+		} else {
+			fmt.Println("INVOICE MONTH CACHE")
+			jsonredis := []byte(resultRD_invoicemonth)
+			totalbet_RD, _ := jsonparser.GetInt(jsonredis, "totalbet")
+			totalwin_RD, _ := jsonparser.GetInt(jsonredis, "totalwin")
+
+			totalwinnew_month := total_win + int(totalwin_RD)
+
+			objinvoicemonth.Totalbet = int(totalbet_RD)
+			objinvoicemonth.Totalwin = int(totalwinnew_month)
+
+			helpers.SetRedis(keyredis_invoicemonth, objinvoicemonth, 0)
+		}
 	}
 
 	key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
@@ -249,7 +285,28 @@ func Update_transaksi(idcompany, invoice, result string) {
 	// return flag_compile
 	fmt.Println(msg)
 }
+func _GetTotalBet_ByDate(table, startdate, enddate string) (int, int) {
+	con := db.CreateCon()
+	ctx := context.Background()
+	totalbet := 0
+	totalwin := 0
+	sql_select := ""
+	sql_select += "SELECT "
+	sql_select += "COALESCE(SUM(total_bet),0) AS totalbet,  COALESCE(sum(total_win),0) as totalwin "
+	sql_select += "FROM " + table + " "
+	sql_select += "WHERE createdate_transaksi >='" + startdate + "'   "
+	sql_select += "AND createdate_transaksi <='" + enddate + "'   "
 
+	row := con.QueryRowContext(ctx, sql_select)
+	switch e := row.Scan(&totalbet, &totalwin); e {
+	case sql.ErrNoRows:
+	case nil:
+	default:
+		helpers.ErrorCheck(e)
+	}
+
+	return totalbet, totalwin
+}
 func _GetTotalBetWin_Transaksi(table, idtransaksi string) (int, int) {
 	con := db.CreateCon()
 	ctx := context.Background()
