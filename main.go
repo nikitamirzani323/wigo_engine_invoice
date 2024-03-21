@@ -10,12 +10,12 @@ import (
 	"strings"
 	"syscall"
 
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/db"
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/helpers"
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/models"
 	"github.com/buger/jsonparser"
 	"github.com/go-redis/redis"
 	"github.com/joho/godotenv"
-	"github.com/nikitamirzani323/wigo_engine_invoice/db"
-	"github.com/nikitamirzani323/wigo_engine_invoice/helpers"
-	"github.com/nikitamirzani323/wigo_engine_invoice/models"
 	"github.com/nleeper/goment"
 )
 

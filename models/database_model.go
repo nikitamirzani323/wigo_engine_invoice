@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nikitamirzani323/wigo_engine_invoice/configs"
-	"github.com/nikitamirzani323/wigo_engine_invoice/db"
-	"github.com/nikitamirzani323/wigo_engine_invoice/helpers"
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/configs"
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/db"
+	"bitbucket.org/isbtotogroup/wigo_engine_invoice/helpers"
 )
 
 func Get_counter(field_column string) int {

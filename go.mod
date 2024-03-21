@@ -1,4 +1,4 @@
-module github.com/nikitamirzani323/wigo_engine_invoice
+module bitbucket.org/isbtotogroup/wigo_engine_invoice
 
 go 1.19
 
