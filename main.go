@@ -19,9 +19,9 @@ import (
 	"github.com/nleeper/goment"
 )
 
-const invoice_client_redis = "CLIENT_LISTINVOICE"
-const invoice_result_redis = "CLIENT_RESULT"
-const invoice_agen_redis = "LISTINVOICE_2D30S_AGEN"
+const invoice_client_redis = "CLIENT:LISTINVOICE"
+const invoice_result_redis = "CLIENT:RESULT"
+const invoice_agen_redis = "AGEN:12D30S:LISTINVOICE"
 
 func main() {
 	err := godotenv.Load()
@@ -94,7 +94,7 @@ func Update_transaksi(idcompany, invoice, result string) {
 	// prize_2D := helpers.GenerateNumber(2)
 	// flag_compile := false
 	flag_detail := false
-	keyredis := strings.ToLower(idcompany) + "_game_12d_" + invoice
+	keyredis := strings.ToLower(idcompany) + ":12D30S:invoice_" + invoice
 	resultRD_invoice, flag_invoice := helpers.GetRedis(keyredis)
 	_, tbl_trx_transaksi, tbl_trx_transaksidetail, _ := models.Get_mappingdatabase(idcompany)
 	if !flag_invoice {
@@ -144,7 +144,7 @@ func Update_transaksi(idcompany, invoice, result string) {
 			}
 			flag_detail = true
 
-			key_redis_invoice_client := invoice_client_redis + "_" + strings.ToLower(idcompany) + "_" + strings.ToLower(username_client_db)
+			key_redis_invoice_client := strings.ToLower(idcompany) + ":" + invoice_client_redis + "_" + strings.ToLower(username_client_db)
 			val_invoice_client := helpers.DeleteRedis(key_redis_invoice_client)
 			fmt.Println("")
 			fmt.Printf("Redis Delete INVOICE : %d - %s \r", val_invoice_client, key_redis_invoice_client)
@@ -189,7 +189,7 @@ func Update_transaksi(idcompany, invoice, result string) {
 			}
 			flag_detail = true
 
-			key_redis_invoice_client := invoice_client_redis + "_" + strings.ToLower(idcompany) + "_" + strings.ToLower(client_username)
+			key_redis_invoice_client := strings.ToLower(idcompany) + ":" + invoice_client_redis + "_" + strings.ToLower(client_username)
 			val_invoice_client := helpers.DeleteRedis(key_redis_invoice_client)
 			fmt.Println("")
 			fmt.Printf("Redis Delete INVOICE : %d - %s \r", val_invoice_client, key_redis_invoice_client)
@@ -233,7 +233,7 @@ func Update_transaksi(idcompany, invoice, result string) {
 		tglstart_redis := tglnow.Format("YYYYMM") + "01000000"
 		tglend_redis := tglnow.Format("YYYYMM") + dayendmonth + "235959"
 
-		keyredis_invoicemonth := strings.ToLower(idcompany) + "_game_12d_" + tglstart_redis + tglend_redis
+		keyredis_invoicemonth := strings.ToLower(idcompany) + ":12D30S:invoicemonth_" + tglstart_redis + tglend_redis
 		resultRD_invoicemonth, flag_invoicemonth := helpers.GetRedis(keyredis_invoicemonth)
 		if !flag_invoicemonth {
 			fmt.Println("INVOICE MONTH DATABASE")
@@ -258,22 +258,23 @@ func Update_transaksi(idcompany, invoice, result string) {
 		}
 	}
 
-	key_redis_result := invoice_result_redis + "_" + strings.ToLower(idcompany)
+	key_redis_result := strings.ToLower(idcompany) + ":" + invoice_result_redis
 	val_result := helpers.DeleteRedis(key_redis_result)
 	fmt.Println("")
 	fmt.Printf("Redis Delete RESULT : %d - %s \n", val_result, key_redis_result)
 	fmt.Println("")
 	for i := 0; i <= 1000; i = i + 250 {
 		//LISTINVOICE_2D30S_AGEN_nuke_0_
-		key_redis_ageninvoice := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_" + strconv.Itoa(i) + "_"
+		key_redis_ageninvoice := strings.ToLower(idcompany) + ":" + invoice_agen_redis + "_" + strconv.Itoa(i) + "_"
 		val_result := helpers.DeleteRedis(key_redis_ageninvoice)
 		fmt.Printf("Redis Delete AGEN INVOICE : %d - %s \n", val_result, key_redis_ageninvoice)
 	}
 
+	// strings.ToLower(client_company) + ":" + Fieldtransaksi2d30s_home_redis + "_DETAIL_" + client.Transaksidetail2D30S_invoice + "_" + client.Transaksidetail2D30S_status
 	// key_redis_detail := "LISTINVOICE_2D30S_AGEN_nuke_DETAIL_240312231346_WIN"
-	key_redis_detail_win := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_WIN"
-	key_redis_detail_lose := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_LOSE"
-	key_redis_detail_running := invoice_agen_redis + "_" + strings.ToLower(idcompany) + "_DETAIL_" + invoice + "_RUNNING"
+	key_redis_detail_win := strings.ToLower(idcompany) + ":" + invoice_agen_redis + "_DETAIL_" + invoice + "_WIN"
+	key_redis_detail_lose := strings.ToLower(idcompany) + ":" + invoice_agen_redis + "_DETAIL_" + invoice + "_LOSE"
+	key_redis_detail_running := strings.ToLower(idcompany) + ":" + invoice_agen_redis + "_DETAIL_" + invoice + "_RUNNING"
 	val_detail_win := helpers.DeleteRedis(key_redis_detail_win)
 	val_detail_lose := helpers.DeleteRedis(key_redis_detail_lose)
 	val_detail_running := helpers.DeleteRedis(key_redis_detail_running)
