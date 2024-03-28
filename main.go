@@ -353,14 +353,13 @@ func _GetTotalMember_Transaksi(table, idtransaksi string) int {
 func _rumuswigo(tipebet, nomorclient, nomorkeluaran string) string {
 	result := "LOSE"
 
-	result_redblack, result_gangen, result_besarkecil, result_line := _nomorresult(nomorkeluaran)
+	result_redblack, result_gangen, result_besarkecil, result_line, result_zona := _nomorresult(nomorkeluaran)
 	switch tipebet {
 	case "ANGKA":
 		if nomorclient == nomorkeluaran {
 			result = "WIN"
 		}
 	case "REDBLACK":
-
 		if nomorclient == result_redblack {
 			result = "WIN"
 		}
@@ -374,12 +373,16 @@ func _rumuswigo(tipebet, nomorclient, nomorkeluaran string) string {
 		if nomorclient == result_line {
 			result = "WIN"
 		}
+	case "ZONA":
+		if nomorclient == result_zona {
+			result = "WIN"
+		}
 	}
 
 	return result
 }
 
-func _nomorresult(nomoresult string) (string, string, string, string) {
+func _nomorresult(nomoresult string) (string, string, string, string, string) {
 	type nomor_result_data struct {
 		nomor_id         string
 		nomor_value      string
@@ -411,13 +414,15 @@ func _nomorresult(nomoresult string) (string, string, string, string) {
 	result_gangen := ""
 	result_besarkecil := ""
 	result_line := ""
+	result_zona := ""
 	for i := 0; i < len(cards); i++ {
 		if cards[i].nomor_id == nomoresult {
 			result_redblack = cards[i].nomor_redblack
 			result_gangen = cards[i].nomor_gangen
 			result_besarkecil = cards[i].nomor_besarkecil
 			result_line = cards[i].nomor_line
+			result_zona = cards[i].nomor_zona
 		}
 	}
-	return result_redblack, result_gangen, result_besarkecil, result_line
+	return result_redblack, result_gangen, result_besarkecil, result_line, result_zona
 }
