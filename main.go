@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"bitbucket.org/isbtotogroup/wigo_engine_invoice/db"
 	"bitbucket.org/isbtotogroup/wigo_engine_invoice/helpers"
@@ -225,15 +226,23 @@ func Update_transaksi(idcompany, invoice, result string) {
 			Totalbet int `json:"totalbet"`
 			Totalwin int `json:"totalwin"`
 		}
+		var objinvoicedaily Invoicemonth
 		var objinvoicemonth Invoicemonth
 
 		dayendmonth := helpers.GetEndRangeDate(tglnow.Format("MM"))
 		tglstart := tglnow.Format("YYYY-MM-") + "01 00:00:00"
 		tglend := tglnow.Format("YYYY-MM-") + dayendmonth + " 23:59:59"
+		tglstart_daily := tglnow.Format("YYYY-MM-DD") + " 00:00:00"
+		tglend_daily := tglnow.Format("YYYY-MM-DD") + " 23:59:59"
+
+		tglstartdaily_redis := tglnow.Format("YYYYMMDD") + "000000"
+		tglenddaily_redis := tglnow.Format("YYYYMMDD") + "235959"
 		tglstart_redis := tglnow.Format("YYYYMM") + "01000000"
 		tglend_redis := tglnow.Format("YYYYMM") + dayendmonth + "235959"
 
+		keyredis_invoicedaily := strings.ToLower(idcompany) + ":12D30S:invoicedaily_" + tglstartdaily_redis + tglenddaily_redis
 		keyredis_invoicemonth := strings.ToLower(idcompany) + ":12D30S:invoicemonth_" + tglstart_redis + tglend_redis
+		resultRD_invoicedaily, flag_invoicedaily := helpers.GetRedis(keyredis_invoicedaily)
 		resultRD_invoicemonth, flag_invoicemonth := helpers.GetRedis(keyredis_invoicemonth)
 		if !flag_invoicemonth {
 			fmt.Println("INVOICE MONTH DATABASE")
@@ -255,6 +264,27 @@ func Update_transaksi(idcompany, invoice, result string) {
 			objinvoicemonth.Totalwin = int(totalwinnew_month)
 
 			helpers.SetRedis(keyredis_invoicemonth, objinvoicemonth, 0)
+		}
+		if !flag_invoicedaily {
+			fmt.Println("INVOICE DAILY DATABASE")
+			totalbet_DB, totalwin_DB := _GetTotalBet_ByDate(tbl_trx_transaksi, tglstart_daily, tglend_daily)
+
+			objinvoicedaily.Totalbet = totalbet_DB
+			objinvoicedaily.Totalwin = totalwin_DB
+
+			helpers.SetRedis(keyredis_invoicedaily, objinvoicedaily, 2880*time.Minute)
+		} else {
+			fmt.Println("INVOICE DAILY CACHE")
+			jsonredis := []byte(resultRD_invoicedaily)
+			totalbet_RD, _ := jsonparser.GetInt(jsonredis, "totalbet")
+			totalwin_RD, _ := jsonparser.GetInt(jsonredis, "totalwin")
+
+			totalwinnew_month := total_win + int(totalwin_RD)
+
+			objinvoicedaily.Totalbet = int(totalbet_RD)
+			objinvoicedaily.Totalwin = int(totalwinnew_month)
+
+			helpers.SetRedis(keyredis_invoicedaily, objinvoicedaily, 2880*time.Minute)
 		}
 	}
 
