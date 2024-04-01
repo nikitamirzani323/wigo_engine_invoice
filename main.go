@@ -408,7 +408,7 @@ func _nomorresult(nomoresult string) (string, string, string, string, string) {
 		{nomor_id: "06", nomor_value: "06", nomor_zona: "ZONA_C", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GENAP", nomor_besarkecil: "KECIL", nomor_line: "LINE2", nomor_redblack: "BLACK"},
 		{nomor_id: "09", nomor_value: "09", nomor_zona: "ZONA_C", nomor_flag: false, nomor_css: "btn btn-error", nomor_gangen: "GANJIL", nomor_besarkecil: "BESAR", nomor_line: "LINE3", nomor_redblack: "RED"},
 		{nomor_id: "12", nomor_value: "12", nomor_zona: "ZONA_C", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GENAP", nomor_besarkecil: "BESAR", nomor_line: "LINE4", nomor_redblack: "BLACK"},
-		{nomor_id: "JACKPOT", nomor_value: "JACKPOT", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "BESAR", nomor_line: "LINE3", nomor_redblack: "RED"}}
+		{nomor_id: "JP", nomor_value: "JP", nomor_flag: false, nomor_css: "btn", nomor_gangen: "GANJIL", nomor_besarkecil: "BESAR", nomor_line: "LINE3", nomor_redblack: "RED"}}
 
 	result_redblack := ""
 	result_gangen := ""
