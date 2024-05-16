@@ -125,7 +125,8 @@ func Update_transaksi(idcompany, invoice, result string) {
 			status_client := _rumuswigo(tipebet_db, nomor_db, result)
 			win := 0
 			if status_client == "WIN" {
-				win = bet_db + int(float64(bet_db)*multiplier_db)
+				// win = bet_db + int(float64(bet_db)*multiplier_db)
+				win = int(float64(bet_db) * multiplier_db)
 			}
 
 			// UPDATE STATUS DETAIL
@@ -170,7 +171,8 @@ func Update_transaksi(idcompany, invoice, result string) {
 			status_client := _rumuswigo(client_tipebet, client_nomor, result)
 			win := 0
 			if status_client == "WIN" {
-				win = int(client_bet) + int(float64(client_bet)*client_multiplier)
+				// win = int(client_bet) + int(float64(client_bet)*client_multiplier)
+				win = int(float64(client_bet) * client_multiplier)
 			}
 
 			// UPDATE STATUS DETAIL
