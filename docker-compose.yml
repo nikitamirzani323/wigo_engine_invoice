@@ -1,8 +1,8 @@
 version: '2'
 
 services:
-  engine_invoice_12d:
-    container_name: engine_invoice_12d
-    image: engine_invoice_12d:0.0.1
+  wigo-engine-invoice-12d:
+    container_name: wigo-engine-invoice-12d
+    image: wigo-engine-invoice-12d:0.0.1
     build: .
     restart: always

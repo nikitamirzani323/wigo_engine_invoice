@@ -202,18 +202,20 @@ func Update_transaksi(idcompany, invoice, result string) {
 
 	}
 	if flag_detail {
+		// UPDATE TABLE MEMBER
+
 		// UPDATE PARENT
-		total_member := _GetTotalMember_Transaksi(tbl_trx_transaksidetail, invoice)
-		total_bet, total_win := _GetTotalBetWin_Transaksi(tbl_trx_transaksidetail, invoice)
+		total_bet, total_win, total_pair, total_invoice, total_member := _GetTotalBetWin_Transaksi(tbl_trx_transaksidetail, invoice)
 		sql_update_parent := `
 				UPDATE 
 				` + tbl_trx_transaksi + `  
-				SET total_bet=$1, total_win=$2, total_member=$3,
-				update_transaksi=$4, updatedate_transaksi=$5            
-				WHERE idtransaksi=$6        
+				SET total_bet=$1, total_win=$2, total_member=$3, 
+				total_pairs=$4, total_invoice=$5,             
+				update_transaksi=$6, updatedate_transaksi=$7             
+				WHERE idtransaksi=$8         
 			`
 		flag_update_parent, msg_update_parent := models.Exec_SQL(sql_update_parent, tbl_trx_transaksi, "UPDATE",
-			total_bet, total_win, total_member,
+			total_bet, total_win, total_member, total_pair, total_invoice,
 			"SYSTEM", tglnow.Format("YYYY-MM-DD HH:mm:ss"), invoice)
 
 		if !flag_update_parent {
@@ -340,48 +342,34 @@ func _GetTotalBet_ByDate(table, startdate, enddate string) (int, int) {
 
 	return totalbet, totalwin
 }
-func _GetTotalBetWin_Transaksi(table, idtransaksi string) (int, int) {
+func _GetTotalBetWin_Transaksi(table, idtransaksi string) (int, int, int, int, int) {
 	con := db.CreateCon()
 	ctx := context.Background()
 	total_bet := 0
 	total_win := 0
+	total_pair := 0
+	total_invoice := 0
+	total_member := 0
 	sql_select := ""
 	sql_select += "SELECT "
-	sql_select += "SUM(bet) AS total_bet, SUM(win) AS total_win  "
+	sql_select += "SUM(bet) AS total_bet, SUM(win) AS total_win,   "
+	sql_select += "COUNT(idtransaksidetail) AS total_pair, COUNT(DISTINCT(playerinvoice)) AS total_invoice,   "
+	sql_select += "COUNT(DISTINCT(username_client)) AS total_member   "
 	sql_select += "FROM " + table + " "
 	sql_select += "WHERE idtransaksi='" + idtransaksi + "'   "
 	sql_select += "AND status_transaksidetail !='RUNNING'   "
 
 	row := con.QueryRowContext(ctx, sql_select)
-	switch e := row.Scan(&total_bet, &total_win); e {
+	switch e := row.Scan(&total_bet, &total_win, &total_pair, &total_invoice, &total_member); e {
 	case sql.ErrNoRows:
 	case nil:
 	default:
 		helpers.ErrorCheck(e)
 	}
 
-	return total_bet, total_win
+	return total_bet, total_win, total_pair, total_invoice, total_member
 }
-func _GetTotalMember_Transaksi(table, idtransaksi string) int {
-	con := db.CreateCon()
-	ctx := context.Background()
-	total_member := 0
-	sql_select := ""
-	sql_select += "SELECT "
-	sql_select += "COUNT(distinct(username_client))  AS total_member  "
-	sql_select += "FROM " + table + " "
-	sql_select += "WHERE idtransaksi='" + idtransaksi + "'   "
 
-	row := con.QueryRowContext(ctx, sql_select)
-	switch e := row.Scan(&total_member); e {
-	case sql.ErrNoRows:
-	case nil:
-	default:
-		helpers.ErrorCheck(e)
-	}
-
-	return total_member
-}
 func _rumuswigo(tipebet, nomorclient, nomorkeluaran string) string {
 	result := "LOSE"
 
