@@ -97,7 +97,7 @@ func Update_transaksi(idcompany, invoice, result string) {
 	flag_detail := false
 	keyredis := strings.ToLower(idcompany) + ":12D30S:invoice_" + invoice
 	resultRD_invoice, flag_invoice := helpers.GetRedis(keyredis)
-	_, tbl_trx_transaksi, tbl_trx_transaksidetail, _ := models.Get_mappingdatabase(idcompany)
+	_, tbl_trx_transaksi, tbl_trx_transaksidetail, tbl_trx_transaksimember, _ := models.Get_mappingdatabase(idcompany)
 	if !flag_invoice {
 		fmt.Println("READ INVOICE DATABASE")
 
@@ -203,6 +203,64 @@ func Update_transaksi(idcompany, invoice, result string) {
 	}
 	if flag_detail {
 		// UPDATE TABLE MEMBER
+		con := db.CreateCon()
+		ctx := context.Background()
+
+		sql_select_detail := `SELECT 
+					playerinvoice, username_client, 
+					sum(bet) as payout,
+					sum(win) as win, 
+					CASE
+						WHEN sum(bet) = sum(win) THEN 'DRAW'
+						WHEN sum(bet) < sum(win) THEN 'WIN'
+						ELSE 'LOSE'
+					END AS status 
+					FROM ` + tbl_trx_transaksidetail + `  
+					WHERE idtransaksi='` + invoice + `'
+					AND status_transaksidetail != 'RUNNING'  
+					group by playerinvoice, username_client 
+			`
+
+		row, err := con.QueryContext(ctx, sql_select_detail)
+		helpers.ErrorCheck(err)
+		for row.Next() {
+			var (
+				payout_db, win_db                                int
+				playerinvoice_db, nusername_client_db, status_db string
+			)
+
+			err = row.Scan(&playerinvoice_db, &nusername_client_db, &payout_db, &win_db, &status_db)
+			helpers.ErrorCheck(err)
+
+			sql_insert := `
+				insert into
+				` + tbl_trx_transaksimember + ` (
+					idtransaksimember, idtransaksi , username_client, 
+					playerinvoice, totalbet, totalwin, status_transaksimember,  
+					create_transaksimember, createdate_transaksimember  
+				) values (
+					$1, $2, $3, 
+					$4, $5, $6, $7,   
+					$8, $9   
+				)
+			`
+
+			field_column := tbl_trx_transaksimember + tglnow.Format("YYYY") + tglnow.Format("MM") + tglnow.Format("DD")
+			idrecord_counter := models.Get_counter(field_column)
+			idrecrodmember_value := tglnow.Format("YY") + tglnow.Format("MM") + tglnow.Format("DD") + tglnow.Format("HH") + strconv.Itoa(idrecord_counter)
+			date_transaksi := tglnow.Format("YYYY-MM-DD HH:mm:ss")
+
+			flag_insert, msg_insert := models.Exec_SQL(sql_insert, tbl_trx_transaksimember, "INSERT",
+				idrecrodmember_value, invoice, nusername_client_db,
+				playerinvoice_db, payout_db, win_db, status_db,
+				"SYSTEM", date_transaksi)
+
+			if !flag_insert {
+				fmt.Println(msg_insert)
+			}
+
+		}
+		defer row.Close()
 
 		// UPDATE PARENT
 		total_bet, total_win, total_pair, total_invoice, total_member := _GetTotalBetWin_Transaksi(tbl_trx_transaksidetail, invoice)
